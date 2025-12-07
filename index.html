@@ -1,0 +1,72 @@
+<!-- index.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Student Helper AI (CUTIE)</title>
+  <style>
+    body { font-family: Arial Black, system-ui; max-width:700px; margin:20px auto; padding:10px;}
+    #chat { border:1px solid #ddd; padding:10px; height:60vh; overflow:auto; background:#fafafa; }
+    .user { text-align:right; margin:8px; }
+    .bot { text-align:left; margin:8px; }
+    .bubble { display:inline-block; padding:8px 12px; border-radius:12px; max-width:80%; }
+    .user .bubble { background:#dbeafe; }
+    .bot .bubble { background:#eef2ff; }
+    #inputRow { margin-top:10px; display:flex; gap:8px; }
+    input[type=text]{flex:1;padding:10px;}
+  </style>
+</head>
+<body>
+  <h2>Student Helper AI — CUTIE</h2>
+  <div id="chat"></div>
+
+  <div id="inputRow">
+    <input id="msg" type="text" placeholder="Ask math, science, study tips..." />
+    <button id="send">Send</button>
+  </div>
+
+<script>
+const API_BASE = "https://cutie-ai-1.onrender.com";
+const chat = document.getElementById("chat"); 
+const input = document.getElementById("msg");
+const send = document.getElementById("send");
+
+function addMessage(text, who='bot'){
+  const div = document.createElement("div");
+  div.className = who;
+  const b = document.createElement("div");
+  b.className = 'bubble';
+  b.textContent = text;
+  div.appendChild(b);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendMessage(){
+  const m = input.value.trim();
+  if(!m) return;
+  addMessage(m, 'user');
+  input.value = '';
+  addMessage("Thinking...", 'bot');
+  try{
+    const res = await fetch(API_BASE + "/api/ask", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({message: m})
+    });
+    const j = await res.json();
+    // Remove the "Thinking..." bubble
+    const last = chat.querySelectorAll('.bot .bubble');
+    if(last.length) last[last.length-1].textContent = j.reply || "No response";
+  }catch(e){
+    const last = chat.querySelectorAll('.bot .bubble');
+    if(last.length) last[last.length-1].textContent = "Error contacting backend. Check console.";
+    console.error(e);
+  }
+}
+
+send.addEventListener("click", sendMessage);
+input.addEventListener("keydown", (e)=> { if(e.key==='Enter') sendMessage(); });
+</script>
+</body>
+</html>
